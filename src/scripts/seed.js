@@ -1,28 +1,62 @@
 const db = require('../models');
 const bcrypt = require('bcrypt');
 
+// Bekleme fonksiyonu (Railway cold start için)
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Bağlantı deneme mekanizması
+const connectWithRetry = async (retries = 5, delay = 5000) => {
+  for (let i = 0; i < retries; i++) {
+    try {
+      console.log(`🔄 Veritabanına bağlanılıyor... (Deneme ${i + 1}/${retries})`);
+      await db.sequelize.authenticate();
+      console.log('✅ Veritabanı bağlantısı başarılı.');
+      return true;
+    } catch (err) {
+      console.error(`❌ Bağlantı başarısız: ${err.message}`);
+      if (i < retries - 1) {
+        console.log(`⏳ ${delay / 1000} saniye bekleniyor...`);
+        await wait(delay);
+      }
+    }
+  }
+  return false;
+};
+
 const seedDatabase = async () => {
   try {
-    // Veritabanı tablolarını senkronize et (Değişiklik varsa uygula)
+    // 1. Bağlantıyı Garantile
+    const isConnected = await connectWithRetry();
+    if (!isConnected) {
+      console.error('❌ Veritabanına bağlanılamadı, seed işlemi iptal edildi.');
+      process.exit(1);
+    }
+
+    // 2. Tabloları Senkronize Et
     await db.sequelize.sync({ alter: true });
     console.log('🔄 Veritabanı senkronize edildi.');
 
-    // --- 1. BÖLÜMLERİ EKLE ---
-    let cengDept, eeeDept, archDept; // ID'leri tutmak için
-    
-    const deptCount = await db.Department.count();
-    if (deptCount === 0) {
-      console.log('🏢 Bölümler ekleniyor...');
-      cengDept = await db.Department.create({ name: 'Bilgisayar Mühendisliği', code: 'CENG', faculty_name: 'Mühendislik Fakültesi' });
-      eeeDept = await db.Department.create({ name: 'Elektrik-Elektronik Müh.', code: 'EEE', faculty_name: 'Mühendislik Fakültesi' });
-      archDept = await db.Department.create({ name: 'Mimarlık', code: 'ARCH', faculty_name: 'Mimarlık Fakültesi' });
-      await db.Department.create({ name: 'İşletme', code: 'BUS', faculty_name: 'İİBF' });
-    } else {
-      console.log('ℹ️ Bölümler zaten var, veritabanından çekiliyor...');
-      cengDept = await db.Department.findOne({ where: { code: 'CENG' } });
-      eeeDept = await db.Department.findOne({ where: { code: 'EEE' } });
-      archDept = await db.Department.findOne({ where: { code: 'ARCH' } });
+    // --- 1. BÖLÜMLERİ GÜVENLİ EKLE (findOrCreate) ---
+    // Bu yöntem varsa bulur, yoksa oluşturur. Hata vermez.
+    const departmentsList = [
+      { name: 'Bilgisayar Mühendisliği', code: 'CENG', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'Elektrik-Elektronik Müh.', code: 'EEE', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'Mimarlık', code: 'ARCH', faculty_name: 'Mimarlık Fakültesi' },
+      { name: 'İşletme', code: 'BUS', faculty_name: 'İİBF' }
+    ];
+
+    for (const dept of departmentsList) {
+      await db.Department.findOrCreate({
+        where: { code: dept.code },
+        defaults: dept
+      });
     }
+    console.log('🏢 Bölümler kontrol edildi/eklendi.');
+
+    // ID'leri almak için veritabanından çekelim
+    const cengDept = await db.Department.findOne({ where: { code: 'CENG' } });
+    const eeeDept = await db.Department.findOne({ where: { code: 'EEE' } });
+    const archDept = await db.Department.findOne({ where: { code: 'ARCH' } });
 
     // --- 2. ADMIN OLUŞTUR ---
     const adminEmail = 'admin@kampus.edu.tr';
@@ -32,21 +66,25 @@ const seedDatabase = async () => {
       console.log('🛡️ Admin oluşturuluyor...');
       await db.User.create({
         email: adminEmail,
-        password_hash: 'Password123!', // Hook bunu hashleyecek
+        password_hash: 'Password123!',
         role: 'admin',
         is_verified: true,
         name: 'Sistem Yöneticisi',
         bio: 'Kampüs sistem yöneticisi.'
       });
+    } else {
+      console.log('🛡️ Admin zaten mevcut.');
     }
 
     // --- 3. ÖĞRETİM ÜYELERİ OLUŞTUR ---
     const facultyData = [
-      { email: 'mehmet.hoca@kampus.edu.tr', name: 'Dr. Mehmet Yılmaz', title: 'Dr. Öğr. Üyesi', deptId: cengDept.id, empNo: 'FAC-001' },
-      { email: 'ayse.prof@kampus.edu.tr', name: 'Prof. Dr. Ayşe Demir', title: 'Prof. Dr.', deptId: eeeDept.id, empNo: 'FAC-002' }
+      { email: 'mehmet.hoca@kampus.edu.tr', name: 'Dr. Mehmet Yılmaz', title: 'Dr. Öğr. Üyesi', deptId: cengDept?.id, empNo: 'FAC-001' },
+      { email: 'ayse.prof@kampus.edu.tr', name: 'Prof. Dr. Ayşe Demir', title: 'Prof. Dr.', deptId: eeeDept?.id, empNo: 'FAC-002' }
     ];
 
     for (const fac of facultyData) {
+      if (!fac.deptId) continue;
+
       const exists = await db.User.findOne({ where: { email: fac.email } });
       if (!exists) {
         console.log(`👨‍🏫 Öğretim üyesi ekleniyor: ${fac.name}`);
@@ -71,14 +109,16 @@ const seedDatabase = async () => {
 
     // --- 4. ÖĞRENCİLERİ OLUŞTUR ---
     const studentData = [
-      { email: 'ali.veli@ogrenci.edu.tr', no: '2022001', deptId: cengDept.id },
-      { email: 'zeynep.kaya@ogrenci.edu.tr', no: '2022002', deptId: cengDept.id },
-      { email: 'can.türk@ogrenci.edu.tr', no: '2022003', deptId: eeeDept.id },
-      { email: 'elif.su@ogrenci.edu.tr', no: '2022004', deptId: archDept.id }, // Farklı fakülte
-      { email: 'burak.yilmaz@ogrenci.edu.tr', no: '2022005', deptId: cengDept.id }
+      { email: 'ali.veli@ogrenci.edu.tr', no: '2022001', deptId: cengDept?.id },
+      { email: 'zeynep.kaya@ogrenci.edu.tr', no: '2022002', deptId: cengDept?.id },
+      { email: 'can.türk@ogrenci.edu.tr', no: '2022003', deptId: eeeDept?.id },
+      { email: 'elif.su@ogrenci.edu.tr', no: '2022004', deptId: archDept?.id },
+      { email: 'burak.yilmaz@ogrenci.edu.tr', no: '2022005', deptId: cengDept?.id }
     ];
 
     for (const stu of studentData) {
+      if (!stu.deptId) continue;
+
       const exists = await db.User.findOne({ where: { email: stu.email } });
       if (!exists) {
         console.log(`🎓 Öğrenci ekleniyor: ${stu.email}`);
@@ -86,7 +126,7 @@ const seedDatabase = async () => {
           email: stu.email,
           password_hash: 'Password123!',
           role: 'student',
-          is_verified: true, // Test için direkt onaylı
+          is_verified: true,
           bio: 'Merhaba ben bir öğrenciyim.'
         });
 
@@ -94,7 +134,7 @@ const seedDatabase = async () => {
           userId: newUser.id,
           student_number: stu.no,
           departmentId: stu.deptId,
-          gpa: (Math.random() * 2 + 2).toFixed(2), // 2.00 - 4.00 arası rastgele not
+          gpa: (Math.random() * 2 + 2).toFixed(2),
           current_semester: 3
         });
       }
@@ -104,7 +144,7 @@ const seedDatabase = async () => {
     console.log('👉 Admin Girişi: admin@kampus.edu.tr / Password123!');
     console.log('👉 Öğrenci Girişi: ali.veli@ogrenci.edu.tr / Password123!');
     
-    process.exit();
+    process.exit(0);
   } catch (error) {
     console.error('❌ Seed Hatası:', error);
     process.exit(1);
