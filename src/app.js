@@ -21,9 +21,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- CORS'u manuel ayarla ---
 const allowedOrigins = new Set([
-  'http://localhost:5173',                                    // local
-  process.env.FRONTEND_URL,                                  // prod frontend (Railway)
-].filter(Boolean));                                          // undefined olanları at
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean));                                         // undefined olanları at
 
 app.use((req, res, next) => {
   const origin = req.header('Origin');
