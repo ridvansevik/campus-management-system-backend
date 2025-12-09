@@ -1,30 +1,30 @@
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
-  try {
-    // Resend üzerinden mail gönder
-    const { data, error } = await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'onboarding@resend.dev', 
-      to: options.email,
-      subject: options.subject,
-      text: options.message,
-    });
-
-    if (error) {
-      console.error('❌ Resend Hatası:', error);
-      throw new Error(error.message);
+  // 1. Transporter'ı Ayarla (.env'den bilgileri çeker)
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', // Gmail için özel servis ayarı (Host/Port yerine bunu kullanmak daha garantidir)
+    auth: {
+      user: process.env.SMTP_EMAIL, // .env'deki Gmail adresiniz
+      pass: process.env.SMTP_PASSWORD, // .env'deki 16 haneli Uygulama Şifresi
+    },
+    tls: {
+      rejectUnauthorized: false
     }
+  });
 
-    console.log(`✅ E-posta başarıyla gönderildi! ID: ${data.id}`);
-    return data;
+  // 2. Mail İçeriği
+  const message = {
+    from: `${process.env.FROM_NAME} <${process.env.FROM_EMAIL}>`,
+    to: options.email,
+    subject: options.subject,
+    text: options.message,
+  };
 
-  } catch (err) {
-    console.error('❌ E-posta gönderilemedi:', err);
-    // Hatayı fırlat ki çağıran fonksiyon (authController) haberdar olsun
-    throw err; 
-  }
+  // 3. Gönder
+  const info = await transporter.sendMail(message);
+
+  console.log(`✅ E-posta başarıyla gönderildi! ID: ${info.messageId}`);
 };
 
 module.exports = sendEmail;
