@@ -8,23 +8,24 @@ const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middleware/async');
 const { ROLES, TOKEN_EXPIRATION } = require('../config/constants');
 
-// 1. REGISTER GÜNCELLEMESİ (Pasif kayıt + Token)
+// src/controllers/authController.js
+
 exports.register = asyncHandler(async (req, res, next) => {
   const { email, password, role, student_number, department_id, employee_number, title, name } = req.body;
 
-  // Doğrulama token'ı oluştur (crypto ile rastgele string)
   const verificationToken = crypto.randomBytes(20).toString('hex');
 
+  // 1. Kullanıcıyı Oluştur
   const newUser = await User.create({
     email,
     password_hash: password,
     role,
-    is_verified: false, // ARTIK PASİF BAŞLIYOR!
-    verification_token: crypto.createHash('sha256').update(verificationToken).digest('hex') // DB'de hashli sakla
+    is_verified: false,
+    verification_token: crypto.createHash('sha256').update(verificationToken).digest('hex')
   });
 
-  // Role göre profil oluşturma kısımları AYNI KALSIN...
- if (role === ROLES.STUDENT) {
+  // Profil oluşturma işlemleri (Aynı kalacak)
+  if (role === ROLES.STUDENT) {
     await Student.create({
       userId: newUser.id,
       student_number: student_number || `ST-${Date.now()}`,
@@ -40,10 +41,8 @@ exports.register = asyncHandler(async (req, res, next) => {
     });
   }
 
-  // Doğrulama Linki Oluştur
-  // Frontend verify sayfası: http://localhost:5173/verify-email/TOKEN
+  // 2. E-posta Göndermeyi Dene
   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-
   const message = `Hesabınızı doğrulamak için lütfen aşağıdaki linke tıklayın:\n\n${verifyUrl}`;
 
   try {
@@ -57,10 +56,13 @@ exports.register = asyncHandler(async (req, res, next) => {
       success: true,
       message: 'Kayıt başarılı. Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın.'
     });
+
   } catch (err) {
-    // Email gidemezse kullanıcıyı silmek gerekebilir ama şimdilik token'ı sıfırlayalım veya hata dönelim
-    console.error(err);
-    return next(new ErrorResponse('E-posta gönderilemedi.', 500));
+    // HATA OLUŞURSA: Kullanıcıyı veritabanından sil (Rollback)
+    await newUser.destroy(); 
+    
+    console.error("Mail gönderme hatası:", err);
+    return next(new ErrorResponse('E-posta gönderilemedi. Kayıt işlemi iptal edildi.', 500));
   }
 });
 
