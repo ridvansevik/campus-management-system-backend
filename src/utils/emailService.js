@@ -8,7 +8,7 @@ const sendEmail = async (options) => {
     secure: false,                    // 587 için false, 465 için true
     auth: {
       user: process.env.SMTP_EMAIL,   // Kullanıcı adı
-      pass: process.env.SMTP_PASSWORD // Şifre veya API Key
+      pass: process.env.SMTP_PASSWORD
     },
     tls: {
       rejectUnauthorized: false       // Bazı sunucu sertifika hatalarını görmezden gel
