@@ -21,7 +21,7 @@ if (process.env.DB_NAME && process.env.DB_USER && process.env.DB_PASS) {
     {
       host: process.env.DB_HOST,
       dialect: 'postgres', // PostgreSQL kullandığımızı belirtiyoruz
-      port: process.env.PORT || 5432,
+      port: process.env.DB_PORT || 5432,
       logging: false, // Konsol kirliliğini önlemek için SQL loglarını kapatabilirsin
       pool: {
         max: 5,
