@@ -8,7 +8,7 @@ const errorHandler = (err, req, res, next) => {
   error.message = err.message; 
 
   // Debug için konsola basalım (Geliştirme aşamasında)
-  onsole.log("Hata Yakalandı:", err.name, err.message); 
+  console.log("Hata Yakalandı:", err.name, err.message); 
   
   // Winston ile logla
   logger.error(`${err.message} \n ${err.stack}`);
