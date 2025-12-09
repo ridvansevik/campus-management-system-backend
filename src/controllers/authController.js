@@ -1,4 +1,4 @@
-const { User, Student, Faculty } = require('../models');
+const { User, Student, Faculty, sequelize} = require('../models');
 const { generateTokens } = require('../utils/jwtHelper');
 const crypto = require('crypto');
 const bcrypt = require('bcrypt');
@@ -13,56 +13,69 @@ const { ROLES, TOKEN_EXPIRATION } = require('../config/constants');
 exports.register = asyncHandler(async (req, res, next) => {
   const { email, password, role, student_number, department_id, employee_number, title, name } = req.body;
 
-  const verificationToken = crypto.randomBytes(20).toString('hex');
-
-  // 1. Kullanıcıyı Oluştur
-  const newUser = await User.create({
-    email,
-    password_hash: password,
-    role,
-    is_verified: false,
-    verification_token: crypto.createHash('sha256').update(verificationToken).digest('hex')
-  });
-
-  // Profil oluşturma işlemleri (Aynı kalacak)
-  if (role === ROLES.STUDENT) {
-    await Student.create({
-      userId: newUser.id,
-      student_number: student_number || `ST-${Date.now()}`,
-      departmentId: department_id || null,
-      current_semester: 1
-    });
-  } else if (role === ROLES.FACULTY) {
-    await Faculty.create({
-      userId: newUser.id,
-      employee_number: employee_number || `FAC-${Date.now()}`,
-      title: title || 'Dr.',
-      departmentId: department_id || null
-    });
-  }
-
-  // 2. E-posta Göndermeyi Dene
-  const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
-  const message = `Hesabınızı doğrulamak için lütfen aşağıdaki linke tıklayın:\n\n${verifyUrl}`;
+  // Transaction başlat
+  const t = await sequelize.transaction();
 
   try {
+    const verificationToken = crypto.randomBytes(20).toString('hex');
+
+    // 1. Kullanıcıyı oluştur (Transaction içinde)
+    const newUser = await User.create({
+      email,
+      password_hash: password,
+      role,
+      is_verified: false,
+      verification_token: crypto.createHash('sha256').update(verificationToken).digest('hex')
+    }, { transaction: t }); // <--- t eklendi
+
+    // 2. Profil oluştur (Transaction içinde)
+    if (role === ROLES.STUDENT) {
+      await Student.create({
+        userId: newUser.id,
+        student_number: student_number || `ST-${Date.now()}`,
+        departmentId: department_id || null,
+        current_semester: 1
+      }, { transaction: t }); // <--- t eklendi
+    } else if (role === ROLES.FACULTY) {
+      await Faculty.create({
+        userId: newUser.id,
+        employee_number: employee_number || `FAC-${Date.now()}`,
+        title: title || 'Dr.',
+        departmentId: department_id || null
+      }, { transaction: t }); // <--- t eklendi
+    }
+
+    // 3. E-posta Gönder
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+    const message = `Hesabınızı doğrulamak için: \n\n${verifyUrl}`;
+
     await sendEmail({
       email: newUser.email,
       subject: 'Hesap Doğrulama',
       message
     });
 
+    // Her şey başarılıysa veritabanına işle
+    await t.commit();
+
     res.status(201).json({
       success: true,
-      message: 'Kayıt başarılı. Lütfen e-postanızı kontrol ederek hesabınızı doğrulayın.'
+      message: 'Kayıt başarılı. Lütfen e-postanızı kontrol edin.'
     });
 
   } catch (err) {
-    // HATA OLUŞURSA: Kullanıcıyı veritabanından sil (Rollback)
-    await newUser.destroy(); 
+    // Hata varsa yapılan TÜM işlemleri geri al (User silinir)
+    await t.rollback();
     
-    console.error("Mail gönderme hatası:", err);
-    return next(new ErrorResponse('E-posta gönderilemedi. Kayıt işlemi iptal edildi.', 500));
+    // Hata logunu bas
+    console.error("Register Hatası:", err);
+    
+    // Özel hata mesajı döndür
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return next(new ErrorResponse('Bu e-posta veya numara zaten kayıtlı.', 400));
+    }
+    
+    return next(new ErrorResponse('Kayıt işlemi başarısız: ' + err.message, 500));
   }
 });
 

@@ -15,7 +15,7 @@ const logger = require('./utils/logger'); // Import et
 dotenv.config();
 
 const app = express();
-
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
