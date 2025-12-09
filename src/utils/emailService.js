@@ -1,22 +1,23 @@
 const nodemailer = require('nodemailer');
 
 const sendEmail = async (options) => {
-  // 1. Transporter Ayarları (Daha kararlı ayarlar)
+  // 1. Transporter Ayarları (Port 465 - SSL)
   const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587, // 465 yerine 587 kullanıyoruz (Daha güvenilir)
-    secure: false, // 587 için false olmalı
+    port: 465, // 587 yerine 465 kullanıyoruz
+    secure: true,
     auth: {
       user: process.env.SMTP_EMAIL,
       pass: process.env.SMTP_PASSWORD
     },
     tls: {
+      // Bazı sunucularda sertifika sorunlarını aşmak için
       rejectUnauthorized: false
     },
-    // Bağlantı takılırsa sonsuza kadar beklemesin, 10 saniyede pes etsin
-    connectionTimeout: 10000, 
-    greetingTimeout: 10000,
-    socketTimeout: 10000
+    // Zaman aşımı sürelerini biraz daha artıralım (20sn)
+    connectionTimeout: 20000, 
+    greetingTimeout: 20000,
+    socketTimeout: 20000
   });
 
   // 2. Mesaj İçeriği
@@ -37,13 +38,13 @@ const sendEmail = async (options) => {
 
   // 3. Gönderim
   try {
+    console.log(`⏳ E-posta gönderiliyor: ${options.email}`);
     const info = await transporter.sendMail(message);
-    console.log(`✅ E-posta gönderildi: ${info.messageId}`);
+    console.log(`✅ E-posta başarıyla gönderildi! ID: ${info.messageId}`);
     return true;
   } catch (error) {
     console.error('❌ E-posta Hatası:', error.message);
-    // Hata detayını fırlat ki controller yakalasın ve rollback yapsın
-    throw new Error(`E-posta sunucusuna bağlanılamadı: ${error.message}`);
+    throw new Error(`E-posta servisine bağlanılamadı: ${error.message}`);
   }
 };
 
