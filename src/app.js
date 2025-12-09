@@ -19,7 +19,25 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173',                                   // local geliştirme
+  process.env.FRONTEND_URL,                                  // env’den (Railway frontend URL)
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Postman / server-side isteklerde origin null olur, onlara izin verelim
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    // İzin verilmeyen origin
+    return callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,               // cookie / auth header kullanıyorsan
+}));
+
 app.use(helmet({
   crossOriginResourcePolicy: { policy: "cross-origin" }
 }));
