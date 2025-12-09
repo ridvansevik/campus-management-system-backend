@@ -21,7 +21,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // --- CORS'u manuel ayarla ---
 const allowedOrigins = new Set([
-  'http://localhost:5173',
+  'http://campus-management-system-backend-production.up.railway.app',
+  'https://campus-management-system-backend-production.up.railway.app',
   process.env.FRONTEND_URL
 ].filter(Boolean));                                         // undefined olanları at
 
