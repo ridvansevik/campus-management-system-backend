@@ -23,6 +23,32 @@ module.exports = (sequelize, DataTypes) => {
       unique: true,
       validate: { isEmail: true }
     },
+    // Personal Information
+    first_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    last_name: {
+      type: DataTypes.STRING,
+      allowNull: true
+    },
+    tc_identity_number: {
+      type: DataTypes.STRING(11),
+      allowNull: true,
+      unique: true,
+      validate: {
+        len: [11, 11],
+        isNumeric: true
+      }
+    },
+    date_of_birth: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
+    },
+    gender: {
+      type: DataTypes.ENUM('male', 'female', 'other'),
+      allowNull: true
+    },
     phone_number: {
       type: DataTypes.STRING,
       allowNull: true
@@ -31,10 +57,19 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
-    bio: {
-      type: DataTypes.TEXT, // Kullanıcı hakkında kısa bilgi
+    city: {
+      type: DataTypes.STRING,
       allowNull: true
     },
+    country: {
+      type: DataTypes.STRING,
+      defaultValue: 'Türkiye'
+    },
+    bio: {
+      type: DataTypes.TEXT,
+      allowNull: true
+    },
+    // Authentication & Security
     password_hash: {
       type: DataTypes.STRING,
       allowNull: false

@@ -18,15 +18,39 @@ module.exports = (sequelize, DataTypes) => {
     },
     gpa: {
       type: DataTypes.FLOAT,
-      defaultValue: 0.0
+      defaultValue: 0.0,
+      validate: {
+        min: 0.0,
+        max: 4.0
+      }
     },
     cgpa: {
       type: DataTypes.FLOAT,
-      defaultValue: 0.0
+      defaultValue: 0.0,
+      validate: {
+        min: 0.0,
+        max: 4.0
+      }
     },
     current_semester: {
       type: DataTypes.INTEGER,
-      defaultValue: 1
+      defaultValue: 1,
+      validate: {
+        min: 1,
+        max: 12
+      }
+    },
+    enrollment_date: {
+      type: DataTypes.DATEONLY,
+      defaultValue: DataTypes.NOW
+    },
+    graduation_date: {
+      type: DataTypes.DATEONLY,
+      allowNull: true
+    },
+    status: {
+      type: DataTypes.ENUM('active', 'graduated', 'suspended', 'withdrawn'),
+      defaultValue: 'active'
     }
   }, {
     sequelize,

@@ -11,7 +11,13 @@ const { ROLES, TOKEN_EXPIRATION } = require('../config/constants');
 // src/controllers/authController.js
 
 exports.register = asyncHandler(async (req, res, next) => {
-  const { email, password, role, student_number, department_id, employee_number, title, name } = req.body;
+  const { 
+    email, password, role, 
+    first_name, last_name, tc_identity_number, date_of_birth, gender,
+    phone_number, address, city, country,
+    student_number, department_id, 
+    employee_number, title, office_location, specialization
+  } = req.body;
 
   // Transaction başlat
   const t = await sequelize.transaction();
@@ -24,25 +30,53 @@ exports.register = asyncHandler(async (req, res, next) => {
       email,
       password_hash: password,
       role,
+      first_name,
+      last_name,
+      tc_identity_number,
+      date_of_birth,
+      gender,
+      phone_number,
+      address,
+      city,
+      country: country || 'Türkiye',
       is_verified: false,
       verification_token: crypto.createHash('sha256').update(verificationToken).digest('hex')
-    }, { transaction: t }); // <--- t eklendi
+    }, { transaction: t });
 
     // 2. Profil oluştur (Transaction içinde)
     if (role === ROLES.STUDENT) {
+      // Validate department_id is provided for students
+      if (!department_id) {
+        throw new Error('Öğrenci kaydı için bölüm seçimi zorunludur.');
+      }
+      
       await Student.create({
         userId: newUser.id,
         student_number: student_number || `ST-${Date.now()}`,
-        departmentId: department_id || null,
-        current_semester: 1
-      }, { transaction: t }); // <--- t eklendi
+        departmentId: department_id,
+        current_semester: 1,
+        enrollment_date: new Date(),
+        status: 'active'
+      }, { transaction: t });
     } else if (role === ROLES.FACULTY) {
+      // Validate department_id and title for faculty
+      if (!department_id) {
+        throw new Error('Öğretim üyesi kaydı için bölüm seçimi zorunludur.');
+      }
+      if (!title) {
+        throw new Error('Öğretim üyesi kaydı için ünvan seçimi zorunludur.');
+      }
+      
       await Faculty.create({
         userId: newUser.id,
         employee_number: employee_number || `FAC-${Date.now()}`,
-        title: title || 'Dr.',
-        departmentId: department_id || null
-      }, { transaction: t }); // <--- t eklendi
+        title,
+        departmentId: department_id,
+        office_location,
+        specialization,
+        hire_date: new Date(),
+        status: 'active'
+      }, { transaction: t });
     }
 
     // 3. E-posta Gönder

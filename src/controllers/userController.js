@@ -43,8 +43,13 @@ exports.getMe = asyncHandler(async (req, res, next) => {
 // PUT /api/v1/users/me - Profilimi Güncelle
 exports.updateMe = asyncHandler(async (req, res, next) => {
   const { 
-    phone_number, address, bio, // Ortak alanlar
-    department_id, student_number, office_location // Role özel alanlar
+    // Personal Information
+    first_name, last_name, tc_identity_number, date_of_birth, gender,
+    phone_number, address, city, country, bio,
+    // Student-specific fields
+    student_number, department_id, current_semester,
+    // Faculty-specific fields
+    office_location, office_phone, specialization, title
   } = req.body;
 
   // 1. Kullanıcıyı ve ilişkili profillerini çek
@@ -60,8 +65,15 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
   }
 
   // 2. Ortak alanları güncelle (Sadece gelen veriyi güncelle)
+  if (first_name !== undefined) user.first_name = first_name;
+  if (last_name !== undefined) user.last_name = last_name;
+  if (tc_identity_number !== undefined) user.tc_identity_number = tc_identity_number;
+  if (date_of_birth !== undefined) user.date_of_birth = date_of_birth;
+  if (gender !== undefined) user.gender = gender;
   if (phone_number !== undefined) user.phone_number = phone_number;
   if (address !== undefined) user.address = address;
+  if (city !== undefined) user.city = city;
+  if (country !== undefined) user.country = country;
   if (bio !== undefined) user.bio = bio;
   
   await user.save();
@@ -70,8 +82,9 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
   // Öğrenciyse
   if (user.role === ROLES.STUDENT && user.studentProfile) {
     const updates = {};
-    if (department_id) updates.departmentId = department_id;
-    if (student_number) updates.student_number = student_number;
+    if (department_id !== undefined) updates.departmentId = department_id;
+    if (student_number !== undefined) updates.student_number = student_number;
+    if (current_semester !== undefined) updates.current_semester = current_semester;
     
     // Eğer güncellenecek veri varsa DB'ye yaz
     if (Object.keys(updates).length > 0) {
@@ -81,8 +94,11 @@ exports.updateMe = asyncHandler(async (req, res, next) => {
   // Öğretim Üyesiyse
   else if (user.role === ROLES.FACULTY && user.facultyProfile) {
     const updates = {};
-    if (department_id) updates.departmentId = department_id;
-    if (office_location) updates.office_location = office_location;
+    if (department_id !== undefined) updates.departmentId = department_id;
+    if (office_location !== undefined) updates.office_location = office_location;
+    if (office_phone !== undefined) updates.office_phone = office_phone;
+    if (specialization !== undefined) updates.specialization = specialization;
+    if (title !== undefined) updates.title = title;
 
     if (Object.keys(updates).length > 0) {
       await user.facultyProfile.update(updates);
@@ -109,9 +125,11 @@ exports.uploadProfileImage = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Lütfen bir resim dosyası yükleyin.', 400));
   }
 
+  // Cloudinary returns the full URL in req.file.path
+  // For secure HTTPS URL, use req.file.path (which is the secure_url from Cloudinary)
   const profilePictureUrl = req.file.path;
 
-  // Sequelize update metodu ile daha kısa yazım
+  // Update user's profile picture URL in database
   await User.update(
     { profile_picture_url: profilePictureUrl },
     { where: { id: req.user.id } }
@@ -120,7 +138,10 @@ exports.uploadProfileImage = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     success: true,
     message: 'Profil fotoğrafı güncellendi.',
-    data: { profilePictureUrl }
+    data: { 
+      profilePictureUrl,
+      cloudinaryPublicId: req.file.filename // Public ID for future reference/deletion
+    }
   });
 });
 

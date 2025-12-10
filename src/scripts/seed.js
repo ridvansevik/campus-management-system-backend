@@ -40,9 +40,17 @@ const seedDatabase = async () => {
     // Bu yöntem varsa bulur, yoksa oluşturur. Hata vermez.
     const departmentsList = [
       { name: 'Bilgisayar Mühendisliği', code: 'CENG', faculty_name: 'Mühendislik Fakültesi' },
-      { name: 'Elektrik-Elektronik Müh.', code: 'EEE', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'Elektrik-Elektronik Mühendisliği', code: 'EEE', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'Makine Mühendisliği', code: 'ME', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'İnşaat Mühendisliği', code: 'CE', faculty_name: 'Mühendislik Fakültesi' },
+      { name: 'Endüstri Mühendisliği', code: 'IE', faculty_name: 'Mühendislik Fakültesi' },
       { name: 'Mimarlık', code: 'ARCH', faculty_name: 'Mimarlık Fakültesi' },
-      { name: 'İşletme', code: 'BUS', faculty_name: 'İİBF' }
+      { name: 'İç Mimarlık', code: 'IA', faculty_name: 'Mimarlık Fakültesi' },
+      { name: 'İşletme', code: 'BUS', faculty_name: 'İktisadi ve İdari Bilimler Fakültesi' },
+      { name: 'İktisat', code: 'ECON', faculty_name: 'İktisadi ve İdari Bilimler Fakültesi' },
+      { name: 'Hukuk', code: 'LAW', faculty_name: 'Hukuk Fakültesi' },
+      { name: 'Tıp', code: 'MED', faculty_name: 'Tıp Fakültesi' },
+      { name: 'Hemşirelik', code: 'NURS', faculty_name: 'Sağlık Bilimleri Fakültesi' }
     ];
 
     for (const dept of departmentsList) {
@@ -69,7 +77,9 @@ const seedDatabase = async () => {
         password_hash: 'Password123!',
         role: 'admin',
         is_verified: true,
-        name: 'Sistem Yöneticisi',
+        first_name: 'Admin',
+        last_name: 'Yönetici',
+        phone_number: '05001234567',
         bio: 'Kampüs sistem yöneticisi.'
       });
     } else {
@@ -78,8 +88,24 @@ const seedDatabase = async () => {
 
     // --- 3. ÖĞRETİM ÜYELERİ OLUŞTUR ---
     const facultyData = [
-      { email: 'mehmet.hoca@kampus.edu.tr', name: 'Dr. Mehmet Yılmaz', title: 'Dr. Öğr. Üyesi', deptId: cengDept?.id, empNo: 'FAC-001' },
-      { email: 'ayse.prof@kampus.edu.tr', name: 'Prof. Dr. Ayşe Demir', title: 'Prof. Dr.', deptId: eeeDept?.id, empNo: 'FAC-002' }
+      { 
+        email: 'mehmet.yilmaz@kampus.edu.tr', 
+        firstName: 'Mehmet', 
+        lastName: 'Yılmaz',
+        title: 'Dr. Öğr. Üyesi', 
+        deptId: cengDept?.id, 
+        empNo: 'FAC-001',
+        specialization: 'Yapay Zeka ve Makine Öğrenmesi'
+      },
+      { 
+        email: 'ayse.demir@kampus.edu.tr', 
+        firstName: 'Ayşe', 
+        lastName: 'Demir',
+        title: 'Prof. Dr.', 
+        deptId: eeeDept?.id, 
+        empNo: 'FAC-002',
+        specialization: 'Güç Sistemleri'
+      }
     ];
 
     for (const fac of facultyData) {
@@ -87,14 +113,18 @@ const seedDatabase = async () => {
 
       const exists = await db.User.findOne({ where: { email: fac.email } });
       if (!exists) {
-        console.log(`👨‍🏫 Öğretim üyesi ekleniyor: ${fac.name}`);
+        console.log(`👨‍🏫 Öğretim üyesi ekleniyor: ${fac.firstName} ${fac.lastName}`);
         const newUser = await db.User.create({
           email: fac.email,
           password_hash: 'Password123!',
           role: 'faculty',
           is_verified: true,
+          first_name: fac.firstName,
+          last_name: fac.lastName,
           phone_number: '05551112233',
-          address: 'Kampüs Lojmanları'
+          address: 'Kampüs Lojmanları, Ankara',
+          city: 'Ankara',
+          country: 'Türkiye'
         });
         
         await db.Faculty.create({
@@ -102,18 +132,57 @@ const seedDatabase = async () => {
           employee_number: fac.empNo,
           title: fac.title,
           departmentId: fac.deptId,
-          office_location: 'Mühendislik Binası A-Blok'
+          office_location: 'Mühendislik Binası A-Blok',
+          office_phone: '03121234567',
+          specialization: fac.specialization,
+          hire_date: new Date(),
+          status: 'active'
         });
       }
     }
 
     // --- 4. ÖĞRENCİLERİ OLUŞTUR ---
     const studentData = [
-      { email: 'ali.veli@ogrenci.edu.tr', no: '2022001', deptId: cengDept?.id },
-      { email: 'zeynep.kaya@ogrenci.edu.tr', no: '2022002', deptId: cengDept?.id },
-      { email: 'can.türk@ogrenci.edu.tr', no: '2022003', deptId: eeeDept?.id },
-      { email: 'elif.su@ogrenci.edu.tr', no: '2022004', deptId: archDept?.id },
-      { email: 'burak.yilmaz@ogrenci.edu.tr', no: '2022005', deptId: cengDept?.id }
+      { 
+        email: 'ali.veli@ogrenci.edu.tr', 
+        firstName: 'Ali', 
+        lastName: 'Veli',
+        no: '2022001', 
+        deptId: cengDept?.id,
+        tcNo: '12345678901'
+      },
+      { 
+        email: 'zeynep.kaya@ogrenci.edu.tr', 
+        firstName: 'Zeynep', 
+        lastName: 'Kaya',
+        no: '2022002', 
+        deptId: cengDept?.id,
+        tcNo: '12345678902'
+      },
+      { 
+        email: 'can.turk@ogrenci.edu.tr', 
+        firstName: 'Can', 
+        lastName: 'Türk',
+        no: '2022003', 
+        deptId: eeeDept?.id,
+        tcNo: '12345678903'
+      },
+      { 
+        email: 'elif.su@ogrenci.edu.tr', 
+        firstName: 'Elif', 
+        lastName: 'Su',
+        no: '2022004', 
+        deptId: archDept?.id,
+        tcNo: '12345678904'
+      },
+      { 
+        email: 'burak.yilmaz@ogrenci.edu.tr', 
+        firstName: 'Burak', 
+        lastName: 'Yılmaz',
+        no: '2022005', 
+        deptId: cengDept?.id,
+        tcNo: '12345678905'
+      }
     ];
 
     for (const stu of studentData) {
@@ -121,12 +190,21 @@ const seedDatabase = async () => {
 
       const exists = await db.User.findOne({ where: { email: stu.email } });
       if (!exists) {
-        console.log(`🎓 Öğrenci ekleniyor: ${stu.email}`);
+        console.log(`🎓 Öğrenci ekleniyor: ${stu.firstName} ${stu.lastName}`);
         const newUser = await db.User.create({
           email: stu.email,
           password_hash: 'Password123!',
           role: 'student',
           is_verified: true,
+          first_name: stu.firstName,
+          last_name: stu.lastName,
+          tc_identity_number: stu.tcNo,
+          date_of_birth: new Date('2002-01-15'),
+          gender: 'male',
+          phone_number: '05551234567',
+          address: 'Örnek Mahallesi, Örnek Sokak No:1',
+          city: 'Ankara',
+          country: 'Türkiye',
           bio: 'Merhaba ben bir öğrenciyim.'
         });
 
@@ -135,7 +213,10 @@ const seedDatabase = async () => {
           student_number: stu.no,
           departmentId: stu.deptId,
           gpa: (Math.random() * 2 + 2).toFixed(2),
-          current_semester: 3
+          cgpa: (Math.random() * 2 + 2).toFixed(2),
+          current_semester: 3,
+          enrollment_date: new Date('2022-09-15'),
+          status: 'active'
         });
       }
     }
