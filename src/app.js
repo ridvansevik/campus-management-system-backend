@@ -3,7 +3,6 @@ const dotenv = require('dotenv');
 const { sequelize } = require('./models'); 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
-const departmentRoutes = require('./routes/departmentRoutes');
 const cors = require('cors');
 const { swaggerUi, swaggerSpec } = require('./config/swagger');
 const path = require('path');
@@ -47,7 +46,6 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
-app.use('/api/v1/departments', departmentRoutes);
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

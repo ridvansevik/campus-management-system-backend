@@ -16,29 +16,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true
     },
-    title: {
-      type: DataTypes.ENUM('Prof. Dr.', 'Doç. Dr.', 'Dr. Öğr. Üyesi', 'Arş. Gör.', 'Öğr. Gör.', 'Okutman'),
+    title: { // Dr., Prof., Arş. Gör. vb.
+      type: DataTypes.STRING,
       allowNull: false
     },
     office_location: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    office_phone: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    specialization: {
-      type: DataTypes.STRING,
-      allowNull: true
-    },
-    hire_date: {
-      type: DataTypes.DATEONLY,
-      defaultValue: DataTypes.NOW
-    },
-    status: {
-      type: DataTypes.ENUM('active', 'on_leave', 'retired'),
-      defaultValue: 'active'
+      type: DataTypes.STRING
     }
   }, {
     sequelize,

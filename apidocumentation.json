@@ -81,101 +81,37 @@
                 "enum": ["student", "faculty"],
                 "description": "Kullanıcı rolü"
               },
-              "first_name": {
-                "type": "string",
-                "required": true,
-                "minLength": 2,
-                "description": "Ad"
-              },
-              "last_name": {
-                "type": "string",
-                "required": true,
-                "minLength": 2,
-                "description": "Soyad"
-              },
-              "tc_identity_number": {
-                "type": "string",
-                "required": true,
-                "length": 11,
-                "pattern": "11 haneli rakam",
-                "description": "TC Kimlik Numarası"
-              },
-              "date_of_birth": {
-                "type": "date",
-                "required": false,
-                "description": "Doğum tarihi (YYYY-MM-DD)"
-              },
-              "gender": {
-                "type": "string",
-                "required": false,
-                "enum": ["male", "female", "other"],
-                "description": "Cinsiyet"
-              },
-              "phone_number": {
-                "type": "string",
-                "required": false,
-                "description": "Telefon numarası"
-              },
-              "address": {
-                "type": "string",
-                "required": false,
-                "description": "Adres"
-              },
-              "city": {
-                "type": "string",
-                "required": false,
-                "description": "Şehir"
-              },
-              "country": {
-                "type": "string",
-                "required": false,
-                "default": "Türkiye",
-                "description": "Ülke"
-              },
-              "department_id": {
-                "type": "number",
-                "required": true,
-                "description": "Bölüm ID'si (ZORUNLU - GET /departments ile alınır)"
-              },
               "student_number": {
                 "type": "string",
                 "required": false,
-                "description": "Öğrenci numarası (opsiyonel, sistem otomatik oluşturur)"
+                "description": "Öğrenci numarası (role='student' ise)"
+              },
+              "department_id": {
+                "type": "number",
+                "required": false,
+                "description": "Bölüm ID'si"
               },
               "employee_number": {
                 "type": "string",
                 "required": false,
-                "description": "Personel numarası (role='faculty' için, opsiyonel)"
+                "description": "Personel numarası (role='faculty' ise)"
               },
               "title": {
                 "type": "string",
-                "required": "role='faculty' ise zorunlu",
-                "enum": ["Prof. Dr.", "Doç. Dr.", "Dr. Öğr. Üyesi", "Arş. Gör.", "Öğr. Gör.", "Okutman"],
-                "description": "Ünvan (role='faculty' için ZORUNLU)"
+                "required": false,
+                "description": "Ünvan (Dr., Prof., Arş. Gör. vb.) (role='faculty' ise)"
               },
-              "office_location": {
+              "name": {
                 "type": "string",
                 "required": false,
-                "description": "Ofis konumu (role='faculty' için)"
-              },
-              "specialization": {
-                "type": "string",
-                "required": false,
-                "description": "Uzmanlık alanı (role='faculty' için)"
+                "description": "Kullanıcı adı"
               }
             },
             "example": {
               "email": "ogrenci@example.com",
               "password": "Sifre123",
               "role": "student",
-              "first_name": "Ahmet",
-              "last_name": "Yılmaz",
-              "tc_identity_number": "12345678901",
-              "date_of_birth": "2002-05-15",
-              "gender": "male",
-              "phone_number": "05551234567",
-              "address": "Örnek Mahallesi, Örnek Sokak No:1",
-              "city": "Ankara",
+              "student_number": "2024001",
               "department_id": 1
             }
           },
@@ -457,19 +393,12 @@
                 "data": {
                   "id": "uuid",
                   "email": "ogrenci@example.com",
-                  "first_name": "Ahmet",
-                  "last_name": "Yılmaz",
-                  "tc_identity_number": "12345678901",
-                  "date_of_birth": "2002-05-15",
-                  "gender": "male",
                   "phone_number": "5551234567",
-                  "address": "Örnek Mahallesi, Örnek Sokak No:1",
-                  "city": "Ankara",
-                  "country": "Türkiye",
+                  "address": "İstanbul, Türkiye",
                   "bio": "Kullanıcı hakkında bilgi",
                   "role": "student",
                   "is_verified": true,
-                  "profile_picture_url": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/kampus-profil-fotolari/profile_userid_timestamp.jpg",
+                  "profile_picture_url": "/uploads/profile_images/filename.jpg",
                   "created_at": "2024-01-01T00:00:00.000Z",
                   "updated_at": "2024-01-01T00:00:00.000Z",
                   "studentProfile": {
@@ -477,25 +406,15 @@
                     "gpa": 3.5,
                     "cgpa": 3.4,
                     "current_semester": 3,
-                    "enrollment_date": "2022-09-15",
-                    "status": "active",
                     "department": {
                       "id": 1,
                       "name": "Bilgisayar Mühendisliği",
-                      "code": "CENG",
-                      "faculty_name": "Mühendislik Fakültesi"
+                      "code": "CSE"
                     }
                   },
                   "facultyProfile": null
                 }
-              },
-              "notes": [
-                "profile_picture_url Cloudinary CDN URL'idir ve null olabilir",
-                "Kullanıcı rolüne göre studentProfile veya facultyProfile dolu olur",
-                "Hassas bilgiler (password_hash, verification_token, reset_password_token) döndürülmez",
-                "tc_identity_number hassas veri olduğu için sadece kendi profilinde görünür",
-                "department bilgisi relation olarak otomatik yüklenir"
-              ]
+              }
             },
             "404": {
               "description": "Kullanıcı bulunamadı",
@@ -516,32 +435,6 @@
             "required": true,
             "contentType": "application/json",
             "schema": {
-              "first_name": {
-                "type": "string",
-                "required": false,
-                "description": "Ad"
-              },
-              "last_name": {
-                "type": "string",
-                "required": false,
-                "description": "Soyad"
-              },
-              "tc_identity_number": {
-                "type": "string",
-                "required": false,
-                "description": "TC Kimlik Numarası"
-              },
-              "date_of_birth": {
-                "type": "date",
-                "required": false,
-                "description": "Doğum tarihi"
-              },
-              "gender": {
-                "type": "string",
-                "required": false,
-                "enum": ["male", "female", "other"],
-                "description": "Cinsiyet"
-              },
               "phone_number": {
                 "type": "string",
                 "required": false,
@@ -551,16 +444,6 @@
                 "type": "string",
                 "required": false,
                 "description": "Adres"
-              },
-              "city": {
-                "type": "string",
-                "required": false,
-                "description": "Şehir"
-              },
-              "country": {
-                "type": "string",
-                "required": false,
-                "description": "Ülke"
               },
               "bio": {
                 "type": "string",
@@ -577,41 +460,17 @@
                 "required": false,
                 "description": "Öğrenci numarası (sadece student rolü için)"
               },
-              "current_semester": {
-                "type": "number",
-                "required": false,
-                "description": "Güncel dönem (sadece student rolü için)"
-              },
               "office_location": {
                 "type": "string",
                 "required": false,
                 "description": "Ofis konumu (sadece faculty rolü için)"
-              },
-              "office_phone": {
-                "type": "string",
-                "required": false,
-                "description": "Ofis telefonu (sadece faculty rolü için)"
-              },
-              "specialization": {
-                "type": "string",
-                "required": false,
-                "description": "Uzmanlık alanı (sadece faculty rolü için)"
-              },
-              "title": {
-                "type": "string",
-                "required": false,
-                "enum": ["Prof. Dr.", "Doç. Dr.", "Dr. Öğr. Üyesi", "Arş. Gör.", "Öğr. Gör.", "Okutman"],
-                "description": "Ünvan (sadece faculty rolü için)"
               }
             },
             "example": {
-              "first_name": "Ahmet",
-              "last_name": "Yılmaz",
               "phone_number": "5551234567",
-              "address": "Yeni Mahalle, Yeni Sokak No:5",
-              "city": "İstanbul",
+              "address": "İstanbul, Türkiye",
               "bio": "Yeni bio bilgisi",
-              "department_id": 2
+              "department_id": 1
             }
           },
           "responses": {
@@ -651,7 +510,7 @@
           "method": "POST",
           "path": "/api/v1/users/me/profile-picture",
           "name": "Profil Fotoğrafı Yükle",
-          "description": "Giriş yapmış kullanıcının profil fotoğrafını Cloudinary'ye yükler ve URL'ini döner.",
+          "description": "Giriş yapmış kullanıcının profil fotoğrafını yükler.",
           "authenticationRequired": true,
           "requestBody": {
             "required": true,
@@ -660,53 +519,26 @@
               "profile_image": {
                 "type": "file",
                 "required": true,
-                "description": "Profil fotoğrafı dosyası",
-                "constraints": {
-                  "maxSize": "5MB",
-                  "allowedFormats": ["jpg", "jpeg", "png"],
-                  "imageTransformation": "Otomatik olarak maksimum 800x800 piksel boyutuna ölçeklendirilir"
-                }
+                "description": "Profil fotoğrafı dosyası (resim formatı)"
               }
-            },
-            "notes": [
-              "Dosya FormData ile 'profile_image' alanı olarak gönderilmelidir",
-              "Content-Type: multipart/form-data kullanılmalıdır",
-              "Authorization header'ı ile Bearer token gönderilmelidir"
-            ]
+            }
           },
           "responses": {
             "200": {
-              "description": "Profil fotoğrafı başarıyla Cloudinary'ye yüklendi",
+              "description": "Profil fotoğrafı başarıyla yüklendi",
               "body": {
                 "success": true,
                 "message": "Profil fotoğrafı güncellendi.",
                 "data": {
-                  "profilePictureUrl": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/kampus-profil-fotolari/profile_userid_timestamp.jpg",
-                  "cloudinaryPublicId": "kampus-profil-fotolari/profile_userid_timestamp"
+                  "profilePictureUrl": "/uploads/profile_images/filename.jpg"
                 }
-              },
-              "notes": [
-                "profilePictureUrl Cloudinary CDN URL'idir ve doğrudan kullanılabilir",
-                "cloudinaryPublicId gelecekte resim silme işlemleri için kullanılabilir"
-              ]
+              }
             },
             "400": {
-              "description": "Dosya yüklenmedi veya geçersiz format",
+              "description": "Dosya yüklenmedi",
               "body": {
                 "success": false,
                 "message": "Lütfen bir resim dosyası yükleyin."
-              },
-              "possibleErrors": [
-                "Dosya gönderilmedi",
-                "Geçersiz dosya formatı (sadece JPG, JPEG, PNG kabul edilir)",
-                "Dosya boyutu 5MB'dan büyük"
-              ]
-            },
-            "401": {
-              "description": "Kimlik doğrulama hatası",
-              "body": {
-                "success": false,
-                "message": "Bu işlem için giriş yapmalısınız."
               }
             }
           }
@@ -831,321 +663,38 @@
           }
         }
       ]
-    },
-    "departments": {
-      "group": "Bölüm İşlemleri",
-      "basePath": "/departments",
-      "description": "Kampüs bölümleri yönetimi. Listeleme public, yönetim işlemleri admin.",
-      "endpoints": [
-        {
-          "method": "GET",
-          "path": "/api/v1/departments",
-          "name": "Tüm Bölümleri Listele",
-          "description": "Tüm bölümleri listeler. Kayıt formunda kullanılır.",
-          "authenticationRequired": false,
-          "requestBody": {
-            "required": false
-          },
-          "responses": {
-            "200": {
-              "description": "Bölümler başarıyla getirildi",
-              "body": {
-                "success": true,
-                "count": 12,
-                "data": [
-                  {
-                    "id": 1,
-                    "name": "Bilgisayar Mühendisliği",
-                    "code": "CENG",
-                    "faculty_name": "Mühendislik Fakültesi"
-                  },
-                  {
-                    "id": 2,
-                    "name": "Elektrik-Elektronik Mühendisliği",
-                    "code": "EEE",
-                    "faculty_name": "Mühendislik Fakültesi"
-                  }
-                ]
-              },
-              "notes": [
-                "Bu endpoint authentication gerektirmez",
-                "Kayıt formunda dropdown için kullanılır",
-                "Fakülte adına göre gruplandırılmış şekilde gelmektedir"
-              ]
-            }
-          }
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/departments/:id",
-          "name": "Bölüm Detayı",
-          "description": "Belirli bir bölümün detaylarını getirir.",
-          "authenticationRequired": false,
-          "pathParameters": {
-            "id": {
-              "type": "number",
-              "required": true,
-              "description": "Bölüm ID'si"
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Bölüm detayları",
-              "body": {
-                "success": true,
-                "data": {
-                  "id": 1,
-                  "name": "Bilgisayar Mühendisliği",
-                  "code": "CENG",
-                  "faculty_name": "Mühendislik Fakültesi",
-                  "students": [],
-                  "facultyMembers": []
-                }
-              }
-            },
-            "404": {
-              "description": "Bölüm bulunamadı",
-              "body": {
-                "success": false,
-                "message": "Bölüm bulunamadı."
-              }
-            }
-          }
-        },
-        {
-          "method": "POST",
-          "path": "/api/v1/departments",
-          "name": "Yeni Bölüm Oluştur (Admin)",
-          "description": "Yeni bölüm oluşturur. Sadece admin erişebilir.",
-          "authenticationRequired": true,
-          "authorization": {
-            "requiredRole": "admin"
-          },
-          "requestBody": {
-            "required": true,
-            "contentType": "application/json",
-            "schema": {
-              "name": {
-                "type": "string",
-                "required": true,
-                "description": "Bölüm adı"
-              },
-              "code": {
-                "type": "string",
-                "required": true,
-                "description": "Bölüm kodu (unique)"
-              },
-              "faculty_name": {
-                "type": "string",
-                "required": true,
-                "description": "Fakülte adı"
-              }
-            },
-            "example": {
-              "name": "Yazılım Mühendisliği",
-              "code": "SE",
-              "faculty_name": "Mühendislik Fakültesi"
-            }
-          },
-          "responses": {
-            "201": {
-              "description": "Bölüm başarıyla oluşturuldu",
-              "body": {
-                "success": true,
-                "message": "Bölüm başarıyla oluşturuldu.",
-                "data": {
-                  "id": 13,
-                  "name": "Yazılım Mühendisliği",
-                  "code": "SE",
-                  "faculty_name": "Mühendislik Fakültesi"
-                }
-              }
-            },
-            "400": {
-              "description": "Bu kod ile kayıtlı bir bölüm zaten var",
-              "body": {
-                "success": false,
-                "message": "Bu kod ile kayıtlı bir bölüm zaten var."
-              }
-            },
-            "403": {
-              "description": "Yetkisiz erişim",
-              "body": {
-                "success": false,
-                "message": "Bu işlem için yetkiniz yok."
-              }
-            }
-          }
-        },
-        {
-          "method": "PUT",
-          "path": "/api/v1/departments/:id",
-          "name": "Bölüm Güncelle (Admin)",
-          "description": "Bölüm bilgilerini günceller. Sadece admin erişebilir.",
-          "authenticationRequired": true,
-          "authorization": {
-            "requiredRole": "admin"
-          },
-          "pathParameters": {
-            "id": {
-              "type": "number",
-              "required": true,
-              "description": "Bölüm ID'si"
-            }
-          },
-          "requestBody": {
-            "required": true,
-            "contentType": "application/json",
-            "schema": {
-              "name": {
-                "type": "string",
-                "required": false,
-                "description": "Bölüm adı"
-              },
-              "code": {
-                "type": "string",
-                "required": false,
-                "description": "Bölüm kodu"
-              },
-              "faculty_name": {
-                "type": "string",
-                "required": false,
-                "description": "Fakülte adı"
-              }
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Bölüm başarıyla güncellendi",
-              "body": {
-                "success": true,
-                "message": "Bölüm başarıyla güncellendi."
-              }
-            }
-          }
-        },
-        {
-          "method": "DELETE",
-          "path": "/api/v1/departments/:id",
-          "name": "Bölüm Sil (Admin)",
-          "description": "Bölümü siler. İlişkili öğrenci/öğretmen varsa silinemez.",
-          "authenticationRequired": true,
-          "authorization": {
-            "requiredRole": "admin"
-          },
-          "pathParameters": {
-            "id": {
-              "type": "number",
-              "required": true,
-              "description": "Bölüm ID'si"
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Bölüm başarıyla silindi",
-              "body": {
-                "success": true,
-                "message": "Bölüm başarıyla silindi."
-              }
-            },
-            "400": {
-              "description": "Bölüme kayıtlı öğrenci/öğretmen var",
-              "body": {
-                "success": false,
-                "message": "Bu bölüme kayıtlı öğrenci veya öğretim üyesi bulunmaktadır."
-              }
-            }
-          }
-        },
-        {
-          "method": "GET",
-          "path": "/api/v1/departments/:id/stats",
-          "name": "Bölüm İstatistikleri (Admin)",
-          "description": "Bölüm istatistiklerini getirir.",
-          "authenticationRequired": true,
-          "authorization": {
-            "requiredRole": "admin"
-          },
-          "pathParameters": {
-            "id": {
-              "type": "number",
-              "required": true,
-              "description": "Bölüm ID'si"
-            }
-          },
-          "responses": {
-            "200": {
-              "description": "Bölüm istatistikleri",
-              "body": {
-                "success": true,
-                "data": {
-                  "department": {
-                    "id": 1,
-                    "name": "Bilgisayar Mühendisliği",
-                    "code": "CENG",
-                    "faculty_name": "Mühendislik Fakültesi"
-                  },
-                  "statistics": {
-                    "totalStudents": 150,
-                    "totalFaculty": 25
-                  }
-                }
-              }
-            }
-          }
-        }
-      ]
     }
   },
   "dataModels": {
     "User": {
       "id": "UUID (string)",
       "email": "string (unique, email format)",
-      "first_name": "string",
-      "last_name": "string",
-      "tc_identity_number": "string (11 digits, unique)",
-      "date_of_birth": "date",
-      "gender": "enum: 'male' | 'female' | 'other'",
-      "phone_number": "string",
-      "address": "text",
-      "city": "string",
-      "country": "string (default: 'Türkiye')",
-      "bio": "text",
+      "phone_number": "string (optional)",
+      "address": "string (optional)",
+      "bio": "string (optional)",
       "role": "enum: 'student' | 'faculty' | 'admin' | 'staff'",
       "is_verified": "boolean",
-      "profile_picture_url": "string (Cloudinary URL)",
+      "profile_picture_url": "string (optional)",
       "created_at": "datetime",
       "updated_at": "datetime"
     },
     "Student": {
       "student_number": "string (unique)",
-      "gpa": "float (0.0-4.0, default: 0.0)",
-      "cgpa": "float (0.0-4.0, default: 0.0)",
-      "current_semester": "integer (1-12, default: 1)",
-      "enrollment_date": "date",
-      "graduation_date": "date (optional)",
-      "status": "enum: 'active' | 'graduated' | 'suspended' | 'withdrawn'",
-      "departmentId": "number (foreign key, required)",
-      "userId": "UUID (foreign key)"
+      "gpa": "float (default: 0.0)",
+      "cgpa": "float (default: 0.0)",
+      "current_semester": "integer (default: 1)",
+      "departmentId": "number (foreign key)"
     },
     "Faculty": {
       "employee_number": "string (unique)",
-      "title": "enum: 'Prof. Dr.' | 'Doç. Dr.' | 'Dr. Öğr. Üyesi' | 'Arş. Gör.' | 'Öğr. Gör.' | 'Okutman'",
-      "office_location": "string",
-      "office_phone": "string",
-      "specialization": "string",
-      "hire_date": "date",
-      "status": "enum: 'active' | 'on_leave' | 'retired'",
-      "departmentId": "number (foreign key, required)",
-      "userId": "UUID (foreign key)"
+      "title": "string (e.g., 'Dr.', 'Prof.', 'Arş. Gör.')",
+      "office_location": "string (optional)",
+      "departmentId": "number (foreign key)"
     },
     "Department": {
-      "id": "number (auto-increment)",
-      "name": "string (e.g., 'Bilgisayar Mühendisliği')",
-      "code": "string (unique, e.g., 'CENG')",
-      "faculty_name": "string (e.g., 'Mühendislik Fakültesi')",
-      "created_at": "datetime",
-      "updated_at": "datetime"
+      "id": "number",
+      "name": "string",
+      "code": "string"
     }
   },
   "errorCodes": {
@@ -1157,63 +706,12 @@
   },
   "notes": {
     "authentication": "Çoğu endpoint için Authorization header'ında Bearer token gönderilmelidir. Token formatı: 'Bearer {accessToken}'",
-    "tokenRefresh": "Access token süresi dolduğunda (15 dakika) refresh token kullanarak yeni access token alınabilir. Refresh token 7 gün geçerlidir.",
-    "emailVerification": {
-      "description": "Kayıt sonrası kullanıcıya e-posta doğrulama linki gönderilir. Hesap doğrulanmadan giriş yapılamaz.",
-      "flow": [
-        "1. Kullanıcı kayıt olur (POST /auth/register)",
-        "2. Sistem otomatik olarak doğrulama e-postası gönderir",
-        "3. E-posta'daki link formatı: {FRONTEND_URL}/verify-email/{token}",
-        "4. Frontend token'ı alıp POST /auth/verify-email endpoint'ine gönderir",
-        "5. Doğrulama başarılıysa kullanıcı otomatik login olur (token'lar döner)"
-      ],
-      "emailService": "Gerçek SMTP e-posta servisi (NodeMailer) kullanılır. EMAIL_USER ve EMAIL_PASSWORD yapılandırılmamışsa mock mode'da çalışır ve console'a yazar."
-    },
-    "passwordReset": {
-      "description": "Şifre sıfırlama token'ı 10 dakika geçerlidir.",
-      "flow": [
-        "1. Kullanıcı şifresini unuttuğunu belirtir (POST /auth/forgot-password)",
-        "2. Sistem kullanıcının e-postasına şifre sıfırlama linki gönderir",
-        "3. E-posta'daki link formatı: {FRONTEND_URL}/reset-password/{resettoken}",
-        "4. Frontend token'ı alıp yeni şifre ile PUT /auth/reset-password/:resettoken endpoint'ine gönderir",
-        "5. Şifre güncellenir ve kullanıcı giriş yapabilir"
-      ],
-      "tokenExpiry": "Reset token 10 dakika sonra otomatik olarak geçersiz hale gelir"
-    },
-    "fileUpload": {
-      "description": "Profil fotoğrafı yükleme için multipart/form-data kullanılmalıdır.",
-      "storage": "Cloudinary cloud storage kullanılır. Dosyalar CDN üzerinden servis edilir.",
-      "constraints": {
-        "maxSize": "5MB",
-        "allowedFormats": ["jpg", "jpeg", "png"],
-        "transformation": "Yüklenen resimler otomatik olarak 800x800 piksel maksimum boyutuna ölçeklendirilir"
-      },
-      "url": "Dönen URL Cloudinary CDN URL'idir ve doğrudan <img> tag'inde kullanılabilir"
-    },
-    "pagination": "Listeleme endpoint'lerinde sayfalama için 'page' ve 'limit' query parametreleri kullanılabilir. Varsayılan: page=1, limit=10",
-    "rateLimiting": "API'ye 15 dakikada maksimum 100 istek gönderilebilir. Bu limit aşıldığında 429 (Too Many Requests) hatası dönülür.",
-    "environmentVariables": {
-      "required": [
-        "JWT_SECRET: JWT token imzalama için kullanılır",
-        "DB_* veya DATABASE_URL: PostgreSQL veritabanı bağlantı bilgileri",
-        "FRONTEND_URL: Email'deki linklerde kullanılır",
-        "CLOUDINARY_*: Profil fotoğrafı yüklemesi için gereklidir"
-      ],
-      "optional": [
-        "EMAIL_USER, EMAIL_PASSWORD: Gerçek email göndermek için. Yoksa mock mode çalışır",
-        "EMAIL_SERVICE: 'gmail' veya 'smtp'. Varsayılan: 'gmail'",
-        "PORT: Sunucu portu. Varsayılan: 5000"
-      ],
-      "documentation": "Detaylı kurulum için ENVIRONMENT_SETUP.md dosyasına bakınız"
-    },
-    "security": {
-      "passwordHashing": "Şifreler bcrypt ile 10 salt rounds kullanılarak hashlenır",
-      "tokenSecurity": "JWT secret production'da güçlü ve rastgele olmalıdır",
-      "emailTokens": "Email doğrulama ve şifre sıfırlama token'ları SHA256 ile hashlenip veritabanında saklanır",
-      "cors": "CORS yapılandırması sadece belirtilen frontend URL'lerine izin verir",
-      "helmet": "Helmet middleware ile HTTP header güvenliği sağlanır",
-      "xss": "XSS-Clean middleware ile XSS saldırılarına karşı koruma sağlanır"
-    }
+    "tokenRefresh": "Access token süresi dolduğunda refresh token kullanarak yeni access token alınabilir.",
+    "emailVerification": "Kayıt sonrası kullanıcıya e-posta doğrulama linki gönderilir. Hesap doğrulanmadan giriş yapılamaz.",
+    "passwordReset": "Şifre sıfırlama token'ı 10 dakika geçerlidir.",
+    "fileUpload": "Profil fotoğrafı yükleme için multipart/form-data kullanılmalıdır.",
+    "pagination": "Listeleme endpoint'lerinde sayfalama için 'page' ve 'limit' query parametreleri kullanılabilir.",
+    "rateLimiting": "API'ye 15 dakikada maksimum 100 istek gönderilebilir."
   }
 }
 
