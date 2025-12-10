@@ -109,7 +109,7 @@ exports.uploadProfileImage = asyncHandler(async (req, res, next) => {
     return next(new ErrorResponse('Lütfen bir resim dosyası yükleyin.', 400));
   }
 
-  const profilePictureUrl = `/uploads/profile_images/${req.file.filename}`;
+  const profilePictureUrl = req.file.path;
 
   // Sequelize update metodu ile daha kısa yazım
   await User.update(
